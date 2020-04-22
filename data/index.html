@@ -1,0 +1,351 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="stylesheet" href="./bootstrap.min.css" />
+    <script src="./jquery.min.js"></script>
+    <script src="./bootstrap.min.js"></script>
+
+    <title>GWI H&T Monitor</title>
+  </head>
+
+  <body>
+    <div class="container">
+
+      <h4 class="text-center bg-dark text-light shadow-lg">GWI H&T Monitor</h4>
+      
+      <br />
+
+      <div class="container-fluid" align="center">
+        <img src="./gwilogo.png" width="300" height="99" />
+      </div>
+
+      <br />
+
+      <div class="card shadow-lg">
+        <h5 class="card-header bg-primary text-center text-light">
+          WiFi Setup
+        </h5>
+        <div class="card-body">
+          <div class="input-group" id="group-warning">
+            <div class="input-group-prepend">
+              <span class="input-group-text">SSID</span>
+            </div>
+            <input
+              type="text"
+              class="form-control"
+              name="ssid"
+              id="ssid"
+              value=""
+            />
+          </div>
+          <br />
+          <div class="input-group">
+            <div class="input-group-prepend">
+              <span class="input-group-text">Pass</span>
+            </div>
+            <input
+              type="password"
+              class="form-control"
+              name="password"
+              id="password"
+              value=""
+            />
+          </div>
+          <br />
+          <div class="input-group">
+            <div class="input-group-prepend">
+              <span class="input-group-text">Addr</span>
+            </div>
+            <input
+              type="text"
+              class="form-control"
+              name="address"
+              id="address"
+              value=""
+            />
+          </div>
+          <br />
+          <div class="text-center">
+            <a id="readData" class="btn btn-primary text-light">Read</a>
+            <a id="submitData" class="btn btn-success text-light">Write</a>
+          </div>
+        </div>
+      </div>
+      <br /><br />
+
+      <div class="text-center">
+        <a
+          class="btn btn-danger"
+          data-toggle="collapse"
+          href="#collapse"
+          role="button"
+          aria-expanded="false"
+          aria-controls="collapseExample"
+        >
+          Advanced Setup
+        </a>
+      </div>
+      <br>
+
+      <br />
+      <div class="card shadow-lg collapse" id="collapse">
+        <h5 class="card-header bg-danger text-center text-light">
+          Advanced Setup
+        </h5>
+        <div class="card-body">
+          <div class="input-group" id="group-warning">
+            <div class="input-group-prepend">
+              <span class="input-group-text">Date Adj</span>
+            </div>
+            <input
+              type="date"
+              class="form-control"
+              name="date-adj"
+              id="date-adj"
+              value=""
+            />
+          </div>
+
+          <br />
+          <div class="input-group" id="group-warning">
+            <div class="input-group-prepend">
+              <span class="input-group-text">Clock Adj</span>
+            </div>
+            <input
+              type="time"
+              class="form-control"
+              name="time-adj"
+              id="time-adj"
+              value=""
+            />
+          </div>
+          <br />
+          <div class="text-center">
+            <a id="readCurrentTime" class="btn btn-info text-light"
+              >Current Time</a
+            >
+            <a id="submitDataTime" class="btn btn-success text-light">Write</a>
+          </div>
+          <br />
+          <div class="input-group">
+            <div class="input-group-prepend">
+              <span class="input-group-text">Humidity Adj</span>
+            </div>
+            <input
+              type="number"
+              class="form-control"
+              name="humidity"
+              id="humidity"
+              value="0"
+            />
+          </div>
+          <br />
+          <div class="input-group">
+            <div class="input-group-prepend">
+              <span class="input-group-text">Temp Adj</span>
+            </div>
+            <input
+              type="number"
+              class="form-control"
+              name="temp"
+              id="temp"
+              value="0"
+            />
+          </div>
+          <br />
+          <div class="text-center">
+            <a id="readDataAdj" class="btn btn-primary text-light">Read</a>
+            <a id="submitDataAdj" class="btn btn-success text-light">Write</a>
+          </div>
+        </div>
+      </div>
+    </div>
+  </body>
+
+  <script>
+    var Socket;
+
+    function init() {
+
+      Socket = new WebSocket("ws://" + window.location.hostname + ":81/");
+
+      Socket.onmessage = function (event) {
+        //console.log(event.data);
+        var data = JSON.parse(event.data);
+
+        if (data.p) document.getElementById("password").value = data.p;
+        if (data.s) document.getElementById("ssid").value = data.s;
+        if (data.d) document.getElementById("address").value = data.d;
+        if (data.ah) document.getElementById("humidity").value = data.ah;
+        if (data.at) document.getElementById("temp").value = data.at;
+        
+
+        if (data.resp) {
+          if (data.resp == "Ok") {
+            alert("saving data success");
+          } else {
+            alert("Saving data failed");
+          }
+        }
+      };
+
+      Socket.onclose = function (e) {
+        console.log(
+          "Socket is closed. Reconnect will be attempted in 1 second.",
+          e.reason
+        );
+        init();
+      };
+
+      Socket.onerror = function (err) {
+        console.error(
+          "Socket encountered error: ",
+          err.message,
+          "Closing socket"
+        );
+        Socket.close();
+      };
+    }
+
+    document
+      .getElementById("readDataAdj")
+      .addEventListener("click", readDataAdj);
+
+    document
+      .getElementById("submitDataAdj")
+      .addEventListener("click", submitDataAdj);
+
+    document
+      .getElementById("submitDataTime")
+      .addEventListener("click", submitDataTime);
+
+    document
+      .getElementById("readCurrentTime")
+      .addEventListener("click", readCurrentTime);
+
+    document
+      .getElementById("submitData")
+      .addEventListener("click", buttonClicked);
+      
+    document.getElementById("readData").addEventListener("click", readClicked);
+
+    function readDataTime() {
+      sendText("rdt");
+    }
+
+    function submitDataAdj() {
+      let humidity = document.getElementById("humidity").value;
+      let temp = document.getElementById("temp").value;
+
+      if (humidity && temp) {
+        let datajson = '{"ah":"';
+        datajson += humidity;
+        datajson += '","at":"';
+        datajson += temp;
+        datajson += '"}';
+
+        sendText(datajson);
+
+        alert("Correction successfully Submitted");
+      } else alert("Entry the data correctly");
+    }
+
+    function readDataAdj() {
+      sendText("read-adj");
+    }
+
+    function readClicked() {
+      sendText("re");
+    }
+
+    function submitDataTime() {
+      let date_adj = document.getElementById("date-adj").value;
+      let time_adj = document.getElementById("time-adj").value;
+      let time = date_adj + " " + time_adj;
+      let date = new Date(time);
+
+      //console.log(date);
+
+      let year = date.getFullYear();
+      let month = date.getMonth() + 1;
+      let day = date.getDate();
+
+      let hour = date.getHours();
+
+      let minute = date.getMinutes();
+
+      if (year && month && day && hour && minute) {
+        let datajson = '{"dy":"';
+        datajson += year;
+        datajson += '","dm":"';
+        datajson += month;
+        datajson += '","dd":"';
+        datajson += day;
+        datajson += '","dh":"';
+        datajson += hour;
+        datajson += '","di":"';
+        datajson += minute;
+        datajson += '"}';
+
+        sendText(datajson);
+
+        alert("Time successfully adjusted");
+      } else alert("Entry the date and time correctly");
+    }
+
+    function readCurrentTime() {
+      n = new Date();
+      y = n.getFullYear();
+      m = n.getMonth() + 1;
+      if (m < 10) m = "0" + m;
+      d = n.getDate();
+      if (d < 10) d = "0" + d;
+
+      hour = n.getHours();
+      if (hour < 10) hour = "0" + hour;
+      min = n.getMinutes();
+      if (min < 10) min = "0" + min;
+
+      document.getElementById("date-adj").value = y + "-" + m + "-" + d;
+      document.getElementById("time-adj").value = hour + ":" + min; // + " " + stat;
+    }
+
+    function buttonClicked() {
+      let ssid = document.getElementById("ssid").value;
+      let password = document.getElementById("password").value;
+      let address = document.getElementById("address").value;
+      if (ssid && password && address) {
+        let datajson = '{"s":"';
+        datajson += ssid;
+        datajson += '","p":"';
+        datajson += password;
+        datajson += '","d":"';
+        datajson += address;
+        datajson += '"}';
+
+        sendText(datajson);
+      } else {
+        alert("Input setup data correctly");
+      }
+    }
+
+    function sendText(data) {
+      Socket.send(data);
+    }
+
+    window.onload = function (e) {
+      init();
+    };
+  </script>
+
+  <footer class="page-footer font-small special-color-dark pt-4">
+    <div class="footer-copyright text-center py-3">
+      Created by: GWI IT & ME/CI
+      <br />
+      <a href="http://globalway.co.id"> PT Global Way Indonesia</a>
+    </div>
+  </footer>
+</html>
